@@ -1,0 +1,59 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build_push:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+          COMMIT_TAG=${{ github.sha }}
+          docker build -t $REGISTRY/${{ env.IMAGE_NAME }}:$COMMIT_TAG -t $REGISTRY/${{ env.IMAGE_NAME }}:latest .
+          docker push $REGISTRY/${{ env.IMAGE_NAME }}:$COMMIT_TAG
+          docker push $REGISTRY/${{ env.IMAGE_NAME }}:latest
+          echo "IMAGE_TAG=$COMMIT_TAG" >> $GITHUB_ENV
+
+  deploy_staging:
+    name: Deploy to Staging (manual approval)
+    needs: build_push
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted  # dein Windows Runner
+    environment: staging
+    steps:
+      - name: Docker login (GHCR)
+        run: |
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+      - name: Update container (staging)
+        shell: pwsh
+        run: |
+          ./deploy/update.ps1 -ImageTag "latest" -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp-staging"
+
+  deploy_prod:
+    name: Deploy to Production (tag + approval)
+    needs: build_push
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: self-hosted  # derselbe Windows Runner
+    environment: production
+    steps:
+      - name: Docker login (GHCR)
+        run: |
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+      - name: Update container (prod)
+        shell: pwsh
+        run: |
+          $tag="${{ github.sha }}"
+          ./deploy/update.ps1 -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp"
