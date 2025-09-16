@@ -32,34 +32,54 @@ jobs:
           echo "IMAGE_TAG=$COMMIT_TAG" >> $GITHUB_ENV
 
   deploy_staging:
-    name: Deploy to Staging (manual approval)
     needs: build_push
-    if: github.ref == 'refs/heads/main'
-    runs-on: self-hosted  # dein Windows Runner
+    runs-on: self-hosted
     environment: staging
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Show workspace + verify script
+        shell: pwsh
+        run: |
+          Write-Host "Workspace: $env:GITHUB_WORKSPACE"
+          Get-ChildItem -Recurse -ErrorAction SilentlyContinue $env:GITHUB_WORKSPACE | Select-Object -First 200 FullName
+          if (-not (Test-Path "$env:GITHUB_WORKSPACE\deploy\update.ps1")) {
+            Write-Error "deploy\update.ps1 nicht gefunden! Ist die Datei im Repo auf dem Branch vorhanden?"
+          }
+
       - name: Docker login (GHCR)
         run: |
           echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+
       - name: Update container (staging)
         shell: pwsh
         run: |
-          & "${{ github.workspace }}\deploy\update.ps1" -ImageTag "latest" -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp-staging"
-         # ./deploy/update.ps1 -ImageTag "latest" -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp-staging"
+          & "$env:GITHUB_WORKSPACE\deploy\update.ps1" -ImageTag "latest" -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp-staging"
 
   deploy_prod:
-    name: Deploy to Production (tag + approval)
     needs: build_push
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: self-hosted  # derselbe Windows Runner
+    runs-on: self-hosted
     environment: production
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify script
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "$env:GITHUB_WORKSPACE\deploy\update.ps1")) {
+            Write-Error "deploy\update.ps1 nicht gefunden!"
+          }
+
       - name: Docker login (GHCR)
         run: |
           echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+
       - name: Update container (prod)
         shell: pwsh
         run: |
           $tag="${{ github.sha }}"
-            & "${{ github.workspace }}\deploy\update.ps1" -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp"
-         # ./deploy/update.ps1 -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp"
+          & "$env:GITHUB_WORKSPACE\deploy\update.ps1" -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp"
+
+
