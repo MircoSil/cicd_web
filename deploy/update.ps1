@@ -1,6 +1,6 @@
 param(
   [string]$ImageTag = "latest",
-  [string]$Repo = "ghcr.io/MircoSil/cicd_web",
+  [string]$Repo = "ghcr.io/mircosil/cicd_web",
   [string]$Name = "my-webapp"
 )
 

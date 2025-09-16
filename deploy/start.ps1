@@ -1,5 +1,5 @@
 param(
-  [string]$Image = "ghcr.io/MircoSil/cicd_web:latest",
+  [string]$Image = "ghcr.io/mircosil/cicd_web:latest",
   [string]$Name = "my-webapp",
   [int]$Port = 80
 )
