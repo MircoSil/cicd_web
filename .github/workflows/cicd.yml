@@ -44,7 +44,8 @@ jobs:
       - name: Update container (staging)
         shell: pwsh
         run: |
-          ./deploy/update.ps1 -ImageTag "latest" -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp-staging"
+          & "${{ github.workspace }}\deploy\update.ps1" -ImageTag "latest" -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp-staging"
+         # ./deploy/update.ps1 -ImageTag "latest" -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp-staging"
 
   deploy_prod:
     name: Deploy to Production (tag + approval)
@@ -60,4 +61,5 @@ jobs:
         shell: pwsh
         run: |
           $tag="${{ github.sha }}"
-          ./deploy/update.ps1 -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp"
+            & "${{ github.workspace }}\deploy\update.ps1" -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp"
+         # ./deploy/update.ps1 -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp"
