@@ -1,12 +1,21 @@
 param(
   [string]$ImageTag = "latest",
   [string]$Repo = "ghcr.io/mircosil/cicd_web",
-  [string]$Name = "my-webapp"
+  [string]$Name = "my-webapp",
+  [int] $Port = 80
 )
+
+$ErrorActionPreference = 'Stop'
 
 $Image = "${Repo}:${ImageTag}"
 docker pull $Image
-docker stop $Name 2>$null
-docker rm $Name 2>$null
-docker run -d --name $Name -p 80:80 --restart unless-stopped $Image
-Write-Host "Updated $Name to $Image"
+
+# Stoppe/entferne Container nur, wenn er existiert
+if (docker ps -a --format "{{.Names}}" | Select-String -SimpleMatch $Name) {
+    docker stop $Name | Out-Null
+    docker rm $Name   | Out-Null
+  }
+  
+  # Neu starten mit gewünschtem Port
+  docker run -d --name $Name -p ${Port}:80 --restart unless-stopped $Image
+  Write-Host "Updated $Name to $Image on http://localhost:$Port"

@@ -55,7 +55,7 @@ jobs:
       - name: Update container (staging)
         shell: pwsh
         run: |
-          & "$env:GITHUB_WORKSPACE\deploy\update.ps1" -ImageTag "latest" -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp-staging"
+          & "$env:GITHUB_WORKSPACE\deploy\update.ps1" -ImageTag "latest" -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp-staging" -Port 8080
 
   deploy_prod:
     needs: build_push
@@ -80,6 +80,6 @@ jobs:
         shell: pwsh
         run: |
           $tag="${{ github.sha }}"
-          & "$env:GITHUB_WORKSPACE\deploy\update.ps1" -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp"
+          & "$env:GITHUB_WORKSPACE\deploy\update.ps1" -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp" -Port 80
 
 
