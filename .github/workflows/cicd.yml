@@ -20,7 +20,7 @@ jobs:
 
       - name: Build image
         run: |
-          echo "${{ secrets.GHCR_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
           COMMIT_TAG=${{ github.sha }}
           docker build -t $REGISTRY/${{ env.IMAGE_NAME }}:$COMMIT_TAG -t $REGISTRY/${{ env.IMAGE_NAME }}:latest .
           docker push $REGISTRY/${{ env.IMAGE_NAME }}:$COMMIT_TAG
