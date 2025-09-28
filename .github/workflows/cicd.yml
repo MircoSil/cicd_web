@@ -6,10 +6,10 @@ permissions:
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*.*.*' ]
+    branches: [main]
+    tags: ["v*.*.*"]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   REGISTRY: ghcr.io
@@ -38,7 +38,6 @@ jobs:
             -d "{extends: default, rules: {document-start: disable, comments-indentation: disable, truthy: {check-keys: false, level: warning}, line-length: {max: 140, level: warning}}}" \
             .
 
-      
       # PowerShell → PSScriptAnalyzer
       - name: Lint PowerShell
         shell: pwsh
@@ -122,5 +121,4 @@ jobs:
           $tag="${{ github.sha }}"
           & "$env:GITHUB_WORKSPACE\deploy\update.ps1" -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp" -Port 80
 
-
-
+          
