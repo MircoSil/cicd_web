@@ -77,7 +77,8 @@ jobs:
       # Smoke-Test: Container starten und per curl testen
       - name: Smoke test container
         run: |
-          ./tests/smoke.sh ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.env.IMAGE_TAG }}
+          bash tests/smoke.sh \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}
 
 
       # Optional: Security Scan (kann bei Bedarf aktiviert werden)
