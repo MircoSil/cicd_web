@@ -119,5 +119,4 @@ jobs:
         shell: pwsh
         run: |
           $tag="${{ github.sha }}"
-          & "$env:GITHUB_WORKSPACE\deploy\update.ps1" -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp" -Port 80
-          
+          & "$env:GITHUB_WORKSPACE\deploy\update.ps1" -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp" -Port 80          
