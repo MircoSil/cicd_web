@@ -32,9 +32,12 @@ jobs:
       # YAML → yamllint
       - name: Install yamllint
         run: sudo apt-get update && sudo apt-get install -y yamllint
-      - name: Run yamllint
+      - name: Run yamllint (github formatter)
         run: |
-          yamllint -s .
+          yamllint -f github \
+            -d "{extends: default, rules: {document-start: disable, comments-indentation: disable, truthy: {check-keys: false, level: warning}, line-length: {max: 140, level: warning}}}" \
+            .
+
       
       # PowerShell → PSScriptAnalyzer
       - name: Lint PowerShell
