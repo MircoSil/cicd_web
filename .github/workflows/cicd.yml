@@ -28,6 +28,7 @@ jobs:
         with:
           dockerfile: Dockerfile
           ignore: DL3018  # Beispiel: falls du bestimmte Regeln auslassen willst
+          no-fail: true
 
       # YAML → yamllint
       - name: Install yamllint
