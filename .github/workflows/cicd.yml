@@ -84,9 +84,9 @@ jobs:
 
       - name: Push image (latest + commit)
         run: |
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker tag $REGISTRY/$IMAGE_NAME:$IMAGE_TAG $REGISTRY/$IMAGE_NAME:latest
+          docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+          docker push $REGISTRY/$IMAGE_NAME:latest
 
 
   deploy_staging:
