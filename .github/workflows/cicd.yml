@@ -43,8 +43,11 @@ jobs:
       - name: Lint PowerShell
         shell: pwsh
         run: |
-          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
-          Invoke-ScriptAnalyzer -Path ./deploy -Recurse -EnableExit
+          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+            Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+          }
+          Import-Module PSScriptAnalyzer
+          Invoke-ScriptAnalyzer -Path ./deploy -Recurse -Severity Error -EnableExit
 
       # Optional: Link-Checker für statische Seite
       - name: Link check (site/)
