@@ -16,42 +16,86 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build_push:
-    name: Build & Push Image
+  quality:
+    name: Linting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build image
+      # Dockerfile → hadolint
+      - name: Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          ignore: DL3018  # Beispiel: falls du bestimmte Regeln auslassen willst
+
+      # YAML → yamllint
+      - name: Install yamllint
+        run: sudo apt-get update && sudo apt-get install -y yamllint
+      - name: Run yamllint
+        run: |
+          yamllint -s .
+      
+      # PowerShell → PSScriptAnalyzer
+      - name: Lint PowerShell
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+          Invoke-ScriptAnalyzer -Path ./deploy -Recurse -EnableExit
+
+      # Optional: Link-Checker für statische Seite
+      - name: Link check (site/)
+        uses: lycheeverse/lychee-action@v1
+        with:
+          args: --no-progress --require-https --verbose ./site
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+  build_push:
+    name: Build, Test & Push Image
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker login
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+
+      - name: Build image
+        run: |
           COMMIT_TAG=${{ github.sha }}
-          docker build -t $REGISTRY/${{ env.IMAGE_NAME }}:$COMMIT_TAG -t $REGISTRY/${{ env.IMAGE_NAME }}:latest .
-          docker push $REGISTRY/${{ env.IMAGE_NAME }}:$COMMIT_TAG
-          docker push $REGISTRY/${{ env.IMAGE_NAME }}:latest
+          docker build -t $REGISTRY/${{ env.IMAGE_NAME }}:$COMMIT_TAG -t $REGISTRY/${{ env.IMAGE_NAME }}:ci .
           echo "IMAGE_TAG=$COMMIT_TAG" >> $GITHUB_ENV
+
+      # Smoke-Test: Container starten und per curl testen
+      - name: Smoke test container
+        run: |
+          ./tests/smoke.sh $REGISTRY/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      # Optional: Security Scan (kann bei Bedarf aktiviert werden)
+      # - name: Trivy scan
+      #   uses: aquasecurity/trivy-action@0.24.0
+      #   with:
+      #     image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      #     format: sarif
+      #     output: trivy.sarif
+
+      - name: Push image (latest + commit)
+        run: |
+          docker tag $REGISTRY/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} $REGISTRY/${{ env.IMAGE_NAME }}:latest
+          docker push $REGISTRY/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker push $REGISTRY/${{ env.IMAGE_NAME }}:latest
 
   deploy_staging:
     needs: build_push
     runs-on: self-hosted
     environment: staging
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Show workspace + verify script
-        shell: pwsh
-        run: |
-          Write-Host "Workspace: $env:GITHUB_WORKSPACE"
-          Get-ChildItem -Recurse -ErrorAction SilentlyContinue $env:GITHUB_WORKSPACE | Select-Object -First 200 FullName
-          if (-not (Test-Path "$env:GITHUB_WORKSPACE\deploy\update.ps1")) {
-            Write-Error "deploy\update.ps1 nicht gefunden! Ist die Datei im Repo auf dem Branch vorhanden?"
-          }
-
+      - uses: actions/checkout@v4
       - name: Docker login (GHCR)
         run: |
           echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
-
       - name: Update container (staging)
         shell: pwsh
         run: |
@@ -64,22 +108,14 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
-
-      - name: Verify script
-        shell: pwsh
-        run: |
-          if (-not (Test-Path "$env:GITHUB_WORKSPACE\deploy\update.ps1")) {
-            Write-Error "deploy\update.ps1 nicht gefunden!"
-          }
-
       - name: Docker login (GHCR)
         run: |
           echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
-
       - name: Update container (prod)
         shell: pwsh
         run: |
           $tag="${{ github.sha }}"
           & "$env:GITHUB_WORKSPACE\deploy\update.ps1" -ImageTag $tag -Repo "ghcr.io/${{ github.repository }}" -Name "my-webapp" -Port 80
+
 
 
