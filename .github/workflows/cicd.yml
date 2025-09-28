@@ -71,7 +71,8 @@ jobs:
       # Smoke-Test: Container starten und per curl testen
       - name: Smoke test container
         run: |
-          ./tests/smoke.sh $REGISTRY/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          ./tests/smoke.sh ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.env.IMAGE_TAG }}
+
 
       # Optional: Security Scan (kann bei Bedarf aktiviert werden)
       # - name: Trivy scan
@@ -83,9 +84,10 @@ jobs:
 
       - name: Push image (latest + commit)
         run: |
-          docker tag $REGISTRY/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} $REGISTRY/${{ env.IMAGE_NAME }}:latest
-          docker push $REGISTRY/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          docker push $REGISTRY/${{ env.IMAGE_NAME }}:latest
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
 
   deploy_staging:
     needs: build_push
