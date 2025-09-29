@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-IMAGE="$1"        # z.B. ghcr.io/owner/repo:commitsha
+IMAGE="$1"
 PORT=18080
 
 cid=$(docker run -d -p ${PORT}:80 --rm "${IMAGE}")

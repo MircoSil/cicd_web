@@ -27,7 +27,7 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
-          ignore: DL3018  # Beispiel: falls du bestimmte Regeln auslassen willst
+          ignore: DL3018  # Beispiel: falls bestimmte Regeln ausgelassen werden sollen
           no-fail: true
 
       # YAML → yamllint
@@ -36,7 +36,9 @@ jobs:
       - name: Run yamllint (github formatter)
         run: |
           yamllint -f github \
-            -d "{extends: default, rules: {document-start: disable, comments-indentation: disable, truthy: {check-keys: false, level: warning}, line-length: {max: 140, level: warning}}}" \
+            -d "{extends: default, rules: {document-start: disable, comments-indentation: disable,
+            truthy: {check-keys: false, level: warning},
+            line-length: {max: 140, level: warning}}}" \
             .
 
       # PowerShell → PSScriptAnalyzer
